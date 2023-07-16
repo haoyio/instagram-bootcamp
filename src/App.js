@@ -1,12 +1,81 @@
-import React from "react";
-import { useEffect, useState } from "react";
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { onChildAdded, push, ref, set, off } from "firebase/database";
+import '@firebase/firestore'
 import { database } from "./firebase";
-import logo from "./logo.png";
-import "./App.css";
+import {
+  Button,
+  TextField,
+  Paper,
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableRow,
+} from '@mui/material'
+
+import './App.css'
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
 const DB_MESSAGES_KEY = "messages";
+
+const tableColumns = [
+  {
+    label: "Message",
+    dataKey: "message",
+  },
+  {
+    label: "Date",
+    dataKey: "date",
+  },
+  {
+    label: "Time",
+    dataKey: "time",
+  },
+];
+
+function messageHeader(columns) {
+  return (
+    <TableRow>
+      {columns.map((column) => (
+        <TableCell
+          key={column.dataKey}
+          variant="head"
+          align="left"
+        >
+          {column.label}
+        </TableCell>
+      ))}
+    </TableRow>
+  )
+}
+
+const messageBody = (messages, messageScrollRef) => (
+  messages.map((message, i, messages) => {
+    const sentAt = new Date(message.sentAt);
+    if (i < messages.length - 1) {
+      return (
+        <TableRow key={message.key}>
+          <TableCell>{message.val}</TableCell>
+          <TableCell>{sentAt.toLocaleDateString("en-US")}</TableCell>
+          <TableCell>{sentAt.toLocaleTimeString("en-US")}</TableCell>
+        </TableRow>
+      )
+    } else {
+      // add scroll reference to last message
+      return (
+        <TableRow key={message.key} ref={messageScrollRef}>
+          <TableCell>{message.val}</TableCell>
+          <TableCell>{sentAt.toLocaleDateString("en-US")}</TableCell>
+          <TableCell>{sentAt.toLocaleTimeString("en-US")}</TableCell>
+        </TableRow>
+      )
+    }
+  })
+)
 
 export default function App () {
 
@@ -14,40 +83,90 @@ export default function App () {
   // when Firebase changes, update local state, which will update local UI
   const [messages, setMessages] = useState([]);
 
+  const messageScrollRef = useRef(null);
+  const [input, setInput] = useState("");
+
+  // update messages displayed when we see new ones
   useEffect(() => {
     const messagesRef = ref(database, DB_MESSAGES_KEY);
     // onChildAdded will return data for every child at the reference and every subsequent new child
     onChildAdded(messagesRef, (data) => {
       // add the subsequent child to local component state, initialising a new array to trigger re-render
       // store message key so we can use it as a key in our list items when rendering messages
-      const newMessage = { key: data.key, val: data.val() };
-      setMessages((prevMessages) => [...prevMessages, newMessage]);
+      const dataVal = data.val();
+      setMessages((prevMessages) => [...prevMessages, {
+        key: data.key,
+        val: dataVal.message,
+        sentAt: dataVal.sentAt,
+      }]);
     });
     return () => off(messagesRef);
   }, []);
 
-  const writeData = () => {
+  // scroll the window to the latest message when received (not sent)
+  useEffect(() => {
+    if (messageScrollRef.current) {
+      messageScrollRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages]);
+
+  const writeData = (e) => {
+    // don't trigger page refresh
+    e.preventDefault();
+
+    // do nothing if no input
+    if (input === "") return;
+
+    // update firebase rtdb
     const messagesRef = ref(database, DB_MESSAGES_KEY);
     const newMessagesRef = push(messagesRef);
-    set(newMessagesRef, "abc");
-  };
+    set(newMessagesRef, {
+      message: input,
+      sentAt: Date.now(),
+    });
 
-  // Convert messages in state to message JSX elements to render
-  const messageListItems = messages.map((message) => (
-    <li key={message.key}>{message.val}</li>
-  ));
+    // clear input
+    setInput("");
+  };
 
   return (
     <div className="App">
       <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        {/* TODO: Add input field and add text input as messages in Firebase */}
-        <button onClick={writeData}>Send</button>
-        <ol>{messageListItems}</ol>
+        <h1>Rocketgram 🚀</h1>
       </header>
+      <Paper>
+        <Paper
+          variant="soft"
+          sx={{
+            borderRadius: "sm",
+            boxShadow: 1,
+            height: 300,
+            minWidth: 300,
+            overflow: "auto",
+          }}
+        >
+          <Table aria-label="chat-log" stickyHeader>
+            <TableHead>{messageHeader(tableColumns)}</TableHead>
+            <TableBody>{messageBody(messages, messageScrollRef)}</TableBody>
+          </Table>
+        </Paper>
+        <Paper>
+          <form onSubmit={writeData} autoComplete="off">
+            <TextField
+              id="input-text"
+              type="text"
+              required
+              fullWidth
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              label="Type a message"
+              InputProps={{
+                endAdornment: <Button type="submit" variant="contained">Send</Button>
+              }}
+            />
+          </form>
+        </Paper>
+      </Paper>
     </div>
   )
 }
