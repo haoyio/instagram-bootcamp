@@ -18,6 +18,8 @@ import {
 } from '@mui/material'
 
 import './App.css'
+import QueryInput from "./components/QueryInput";
+
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
 const DB_MESSAGES_KEY = "messages";
@@ -132,7 +134,7 @@ export default function App () {
   return (
     <div className="App">
       <header className="App-header">
-        <h1>Rocketgram 🚀</h1>
+        <h1>🚀gram</h1>
       </header>
       <Paper>
         <Paper
@@ -167,6 +169,7 @@ export default function App () {
           </form>
         </Paper>
       </Paper>
+      <QueryInput />
     </div>
   )
 }
