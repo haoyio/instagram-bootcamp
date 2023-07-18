@@ -178,7 +178,7 @@ export default function App(props) {
           setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
         })
         .catch(e => console.log(e))
-        .finally(() => { setIsProcessingAudio(false)} );
+        .finally(() => { setIsProcessingAudio(false) });
     } else {
       console.log("Using webkitSpeechRecognition.");
       recognition.recognize()
@@ -187,7 +187,7 @@ export default function App(props) {
           setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
         })
         .catch(e => console.log(e))
-        .finally(() => { setIsProcessingAudio(false)} );
+        .finally(() => { setIsProcessingAudio(false) });
     }
   };
 
