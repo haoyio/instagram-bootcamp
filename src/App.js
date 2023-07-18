@@ -3,7 +3,6 @@ import React, {
   useRef,
   useState,
 } from "react";
-import { connect } from 'react-redux';
 
 import { onChildAdded, push, ref, set, off } from "firebase/database";
 import '@firebase/firestore'
@@ -23,10 +22,16 @@ import {
 import MicIcon from '@mui/icons-material/Mic';
 
 import './App.css'
+import * as recognition from "./asr/speech-recognition";
+import GoogleAsr from './asr/google-asr';
 
+
+const asr = new GoogleAsr();
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
 const DB_MESSAGES_KEY = "messages";
+
+const MAX_ALTERNATIVES = 8;
 
 const tableColumns = [
   {
@@ -137,7 +142,25 @@ export default function App(props) {
 
   const handleMicrophoneClick = (e) => {
     e.preventDefault();
-    setInput("Oops...");
+
+    asr.key = process.env.REACT_APP_GOOGLE_KEY || null;
+    asr.maxTranscripts = MAX_ALTERNATIVES;
+
+    if (asr.key) {
+      console.log("Using Google Cloud ASR.");
+      asr.recognize()
+        .then((response) => {
+          const best_transcript = response[0].transcript;
+          setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
+        })
+    } else {
+      console.log("Using webkitSpeechRecognition.");
+      recognition.recognize()
+        .then((response) => {
+          const best_transcript = response[0].transcript;
+          setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
+        })
+    }
   };
 
   return (
