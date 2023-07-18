@@ -3,11 +3,15 @@ import React, {
   useRef,
   useState,
 } from "react";
+import { connect } from 'react-redux';
+
 import { onChildAdded, push, ref, set, off } from "firebase/database";
 import '@firebase/firestore'
 import { database } from "./firebase";
+
 import {
   Button,
+  IconButton,
   TextField,
   Paper,
   Table,
@@ -16,9 +20,10 @@ import {
   TableHead,
   TableRow,
 } from '@mui/material'
+import MicIcon from '@mui/icons-material/Mic';
 
 import './App.css'
-import QueryInput from "./components/QueryInput";
+import * as actions from './actions';
 
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
@@ -79,7 +84,7 @@ const messageBody = (messages, messageScrollRef) => (
   })
 )
 
-export default function App () {
+function App (props) {
 
   // init empty messages array in state to keep local state in sync with Firebase
   // when Firebase changes, update local state, which will update local UI
@@ -131,6 +136,11 @@ export default function App () {
     setInput("");
   };
 
+  const handleMicrophoneClick = (e) => {
+    e.preventDefault();
+    props.executeQuery();
+  };
+
   return (
     <div className="App">
       <header className="App-header">
@@ -141,7 +151,7 @@ export default function App () {
           variant="soft"
           sx={{
             borderRadius: "sm",
-            boxShadow: 1,
+            boxShadow: 0,
             height: 300,
             minWidth: 300,
             overflow: "auto",
@@ -152,7 +162,7 @@ export default function App () {
             <TableBody>{messageBody(messages, messageScrollRef)}</TableBody>
           </Table>
         </Paper>
-        <Paper>
+        <Paper variant="soft">
           <form onSubmit={writeData} autoComplete="off">
             <TextField
               id="input-text"
@@ -161,15 +171,31 @@ export default function App () {
               fullWidth
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              label="Type a message"
+              label="Enter a message"
               InputProps={{
-                endAdornment: <Button type="submit" variant="contained">Send</Button>
+                endAdornment: (
+                  <>
+                    <IconButton variant="contained" onClick={handleMicrophoneClick}>
+                      <MicIcon />
+                    </IconButton>
+                    <Button type="submit" variant="contained">Send</Button>
+                  </>
+                )
               }}
             />
           </form>
         </Paper>
       </Paper>
-      <QueryInput />
     </div>
   )
 }
+
+const mapStateToProps = (state) => ({ query: state.query });
+
+const mapDispatchToProps = (dispatch) => ({
+  updateQuery: (query) => dispatch(actions.updateQuery(query)),
+  startRecognition: () => dispatch(actions.startRecognition()),
+  executeQuery: () => dispatch(actions.executeQuery()),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(App)

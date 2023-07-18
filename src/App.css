@@ -1,17 +1,3 @@
 header {
   text-align: center;
 }
-.query-input .mic {
-  position: absolute;
-  right: 10px;
-  top: 0;
-  width: 18px;
-  height: 42px;
-  background-image: url('assets/images/bluemic.png');
-  background-size: contain;
-  background-position: center center;
-  background-repeat: no-repeat;
-}
-.query-input:hover .mic {
-  background-image: url('assets/images/orangemic.png');
-}

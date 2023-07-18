@@ -1,8 +1,6 @@
 import axios from 'axios';
 import get from 'lodash.get';
 
-const URI = 'http://127.0.0.1:7150/parse';
-
 export const query = async (body) => {
   if (typeof body === 'string') {
     body = {
@@ -12,7 +10,6 @@ export const query = async (body) => {
 
   const result = await axios({
     method: 'post',
-    baseURL: URI,
     headers: {
       'Content-Type': 'application/json',
     },
