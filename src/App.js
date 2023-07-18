@@ -23,7 +23,6 @@ import {
 import MicIcon from '@mui/icons-material/Mic';
 
 import './App.css'
-import * as actions from './actions';
 
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
@@ -84,7 +83,7 @@ const messageBody = (messages, messageScrollRef) => (
   })
 )
 
-function App (props) {
+export default function App(props) {
 
   // init empty messages array in state to keep local state in sync with Firebase
   // when Firebase changes, update local state, which will update local UI
@@ -138,7 +137,7 @@ function App (props) {
 
   const handleMicrophoneClick = (e) => {
     e.preventDefault();
-    props.executeQuery();
+    setInput("Oops...");
   };
 
   return (
@@ -189,13 +188,3 @@ function App (props) {
     </div>
   )
 }
-
-const mapStateToProps = (state) => ({ query: state.query });
-
-const mapDispatchToProps = (dispatch) => ({
-  updateQuery: (query) => dispatch(actions.updateQuery(query)),
-  startRecognition: () => dispatch(actions.startRecognition()),
-  executeQuery: () => dispatch(actions.executeQuery()),
-});
-
-export default connect(mapStateToProps, mapDispatchToProps)(App)

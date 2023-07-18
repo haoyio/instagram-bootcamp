@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-import Recorder from './Recorder';
+import Recorder from './recorder';
 
 
 export default class GoogleAsr {
