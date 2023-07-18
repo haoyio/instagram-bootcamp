@@ -3,7 +3,7 @@ import * as APP from './constants';
 
 import { query as apiQuery } from './api';
 import * as recognition from "./components/asr/speech-recognition";
-import GoogleAsr from './components/asr/GoogleAsr';
+import GoogleAsr from './components/asr/google-asr';
 
 
 const asr = new GoogleAsr();
