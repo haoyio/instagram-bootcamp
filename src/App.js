@@ -20,6 +20,8 @@ import {
   TableRow,
 } from '@mui/material'
 import MicIcon from '@mui/icons-material/Mic';
+import CancelScheduleSendIcon from '@mui/icons-material/CancelScheduleSend';
+import SendIcon from '@mui/icons-material/Send';
 
 import './App.css'
 import * as recognition from "./asr/speech-recognition";
@@ -37,14 +39,17 @@ const tableColumns = [
   {
     label: "Message",
     dataKey: "message",
+    width: "60%",
   },
   {
     label: "Date",
     dataKey: "date",
+    width: "20%",
   },
   {
     label: "Time",
     dataKey: "time",
+    width: "20%",
   },
 ];
 
@@ -56,6 +61,7 @@ function messageHeader(columns) {
           key={column.dataKey}
           variant="head"
           align="left"
+          width={column.width}
         >
           {column.label}
         </TableCell>
@@ -70,18 +76,30 @@ const messageBody = (messages, messageScrollRef) => (
     if (i < messages.length - 1) {
       return (
         <TableRow key={message.key}>
-          <TableCell>{message.val}</TableCell>
-          <TableCell>{sentAt.toLocaleDateString("en-US")}</TableCell>
-          <TableCell>{sentAt.toLocaleTimeString("en-US")}</TableCell>
+          <TableCell style={{ borderBottom: "none" }}>
+            {message.val}
+          </TableCell>
+          <TableCell style={{ borderBottom: "none" }}>
+            {sentAt.toLocaleDateString("en-US")}
+          </TableCell>
+          <TableCell style={{ borderBottom: "none" }}>
+            {sentAt.toLocaleTimeString("en-US")}
+          </TableCell>
         </TableRow>
       )
     } else {
       // add scroll reference to last message
       return (
         <TableRow key={message.key} ref={messageScrollRef}>
-          <TableCell>{message.val}</TableCell>
-          <TableCell>{sentAt.toLocaleDateString("en-US")}</TableCell>
-          <TableCell>{sentAt.toLocaleTimeString("en-US")}</TableCell>
+          <TableCell style={{ borderBottom: "none" }}>
+            {message.val}
+          </TableCell>
+          <TableCell style={{ borderBottom: "none" }}>
+            {sentAt.toLocaleDateString("en-US")}
+          </TableCell>
+          <TableCell style={{ borderBottom: "none" }}>
+            {sentAt.toLocaleTimeString("en-US")}
+          </TableCell>
         </TableRow>
       )
     }
@@ -96,6 +114,7 @@ export default function App(props) {
 
   const messageScrollRef = useRef(null);
   const [input, setInput] = useState("");
+  const [isProcessingAudio, setIsProcessingAudio] = useState(false);
 
   // update messages displayed when we see new ones
   useEffect(() => {
@@ -143,6 +162,11 @@ export default function App(props) {
   const handleMicrophoneClick = (e) => {
     e.preventDefault();
 
+    // ignore if we're currently already recording/processing audio
+    if (isProcessingAudio) return;
+
+    setIsProcessingAudio(true);
+
     asr.key = process.env.REACT_APP_GOOGLE_KEY || null;
     asr.maxTranscripts = MAX_ALTERNATIVES;
 
@@ -153,6 +177,8 @@ export default function App(props) {
           const best_transcript = response[0].transcript;
           setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
         })
+        .catch(e => console.log(e))
+        .finally(() => { setIsProcessingAudio(false)} );
     } else {
       console.log("Using webkitSpeechRecognition.");
       recognition.recognize()
@@ -160,6 +186,8 @@ export default function App(props) {
           const best_transcript = response[0].transcript;
           setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
         })
+        .catch(e => console.log(e))
+        .finally(() => { setIsProcessingAudio(false)} );
     }
   };
 
@@ -168,7 +196,7 @@ export default function App(props) {
       <header className="App-header">
         <h1>🚀gram</h1>
       </header>
-      <Paper>
+      <Paper elevation={0}>
         <Paper
           variant="soft"
           sx={{
@@ -184,23 +212,46 @@ export default function App(props) {
             <TableBody>{messageBody(messages, messageScrollRef)}</TableBody>
           </Table>
         </Paper>
-        <Paper variant="soft">
+        <Paper
+          variant="soft"
+          elevation={1}
+          sx={{
+            borderRadius: "sm",
+            boxShadow: 0,
+            height: 300,
+            minWidth: 300,
+            overflow: "auto",
+          }}
+        >
           <form onSubmit={writeData} autoComplete="off">
             <TextField
               id="input-text"
               type="text"
               required
               fullWidth
+              variant="filled"
+              disabled={isProcessingAudio}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              label="Enter a message"
+              label={isProcessingAudio ? "Processing audio..." : "Say or type something..."}
               InputProps={{
                 endAdornment: (
                   <>
-                    <IconButton variant="contained" onClick={handleMicrophoneClick}>
+                    <IconButton
+                      variant="contained"
+                      onClick={handleMicrophoneClick}
+                      disabled={isProcessingAudio}
+                    >
                       <MicIcon />
                     </IconButton>
-                    <Button type="submit" variant="contained">Send</Button>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      disabled={isProcessingAudio}
+                      endIcon={isProcessingAudio ? <CancelScheduleSendIcon /> : <SendIcon />}
+                    >
+                      Send
+                    </Button>
                   </>
                 )
               }}
