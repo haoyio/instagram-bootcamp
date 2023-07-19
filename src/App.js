@@ -154,8 +154,8 @@ export default function App() {
       console.log("Using Google Cloud ASR.");
       asr.recognize()
         .then((response) => {
-          const best_transcript = response[0].transcript;
-          setTextInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
+          const bestTranscript = response[0].transcript;
+          setTextInput((prev) => prev === "" ? bestTranscript : prev + "; " + bestTranscript);
         })
         .catch(e => console.log(e))
         .finally(() => { setIsProcessingAudio(false) });
@@ -163,8 +163,8 @@ export default function App() {
       console.log("Using webkitSpeechRecognition.");
       recognition.recognize()
         .then((response) => {
-          const best_transcript = response[0].transcript;
-          setTextInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
+          const bestTranscript = response[0].transcript;
+          setTextInput((prev) => prev === "" ? bestTranscript : prev + "; " + bestTranscript);
         })
         .catch(e => console.log(e))
         .finally(() => { setIsProcessingAudio(false) });
