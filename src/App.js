@@ -221,7 +221,10 @@ export default function App() {
                     >
                       <MicIcon />
                     </IconButton>
-                    <IconButton onClick={() => fileInput.current.click()}>
+                    <IconButton onClick={(e) => {
+                      fileInput.current.click();
+                      e.target.value = null;
+                    }}>
                       <PhotoCamera />
                       <input
                         styles={{ display: "none" }}
@@ -230,7 +233,6 @@ export default function App() {
                         hidden
                         ref={fileInput}
                         onChange={(e) => setFileInputFile(e.target.files[0])}
-                        onClick={(e) => e.target.value = null}
                       />
                     </IconButton>
                     <Button
