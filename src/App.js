@@ -4,121 +4,65 @@ import React, {
   useState,
 } from "react";
 
-import { onChildAdded, push, ref, set, off } from "firebase/database";
+import {
+  onChildAdded,
+  push,
+  ref as databaseRef,
+  set,
+  off,
+} from "firebase/database";
+import {
+  getDownloadURL,
+  ref as storageRef,
+  uploadBytes,
+} from "firebase/storage";
 import '@firebase/firestore'
-import { database } from "./firebase";
+import { database, storage } from "./firebase";
 
 import {
   Button,
   IconButton,
-  TextField,
   Paper,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
+  TextField,
+  Typography,
 } from '@mui/material'
 import MicIcon from '@mui/icons-material/Mic';
 import CancelScheduleSendIcon from '@mui/icons-material/CancelScheduleSend';
+import { PhotoCamera } from "@mui/icons-material";
 import SendIcon from '@mui/icons-material/Send';
 
 import './App.css'
 import * as recognition from "./asr/speech-recognition";
 import GoogleAsr from './asr/google-asr';
+import ChatFeed from './Components/ChatFeed';
+import { MemoizedImagePreview } from './Components/ImagePreview';
 
 
 const asr = new GoogleAsr();
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
 const DB_MESSAGES_KEY = "messages";
+const IMAGES_FOLDER_NAME = "images";
 
-const MAX_ALTERNATIVES = 8;
+const MAX_ASR_TRANSCRIPTION_ALTERNATIVES = 8;
 
-const tableColumns = [
-  {
-    label: "Message",
-    dataKey: "message",
-    width: "60%",
-  },
-  {
-    label: "Date",
-    dataKey: "date",
-    width: "20%",
-  },
-  {
-    label: "Time",
-    dataKey: "time",
-    width: "20%",
-  },
-];
-
-function messageHeader(columns) {
-  return (
-    <TableRow>
-      {columns.map((column) => (
-        <TableCell
-          key={column.dataKey}
-          variant="head"
-          align="left"
-          width={column.width}
-        >
-          {column.label}
-        </TableCell>
-      ))}
-    </TableRow>
-  )
-}
-
-const messageBody = (messages, messageScrollRef) => (
-  messages.map((message, i, messages) => {
-    const sentAt = new Date(message.sentAt);
-    if (i < messages.length - 1) {
-      return (
-        <TableRow key={message.key}>
-          <TableCell style={{ borderBottom: "none" }}>
-            {message.val}
-          </TableCell>
-          <TableCell style={{ borderBottom: "none" }}>
-            {sentAt.toLocaleDateString("en-US")}
-          </TableCell>
-          <TableCell style={{ borderBottom: "none" }}>
-            {sentAt.toLocaleTimeString("en-US")}
-          </TableCell>
-        </TableRow>
-      )
-    } else {
-      // add scroll reference to last message
-      return (
-        <TableRow key={message.key} ref={messageScrollRef}>
-          <TableCell style={{ borderBottom: "none" }}>
-            {message.val}
-          </TableCell>
-          <TableCell style={{ borderBottom: "none" }}>
-            {sentAt.toLocaleDateString("en-US")}
-          </TableCell>
-          <TableCell style={{ borderBottom: "none" }}>
-            {sentAt.toLocaleTimeString("en-US")}
-          </TableCell>
-        </TableRow>
-      )
-    }
-  })
-)
-
-export default function App(props) {
+export default function App() {
 
   // init empty messages array in state to keep local state in sync with Firebase
   // when Firebase changes, update local state, which will update local UI
   const [messages, setMessages] = useState([]);
 
   const messageScrollRef = useRef(null);
-  const [input, setInput] = useState("");
+  const [textInput, setTextInput] = useState("");
   const [isProcessingAudio, setIsProcessingAudio] = useState(false);
+
+  const fileInput = useRef();
+  const [fileInputFile, setFileInputFile] = useState(null);
+  const [isUploadingInput, setIsUploadingInput] = useState(false);
 
   // update messages displayed when we see new ones
   useEffect(() => {
-    const messagesRef = ref(database, DB_MESSAGES_KEY);
+    const messagesRef = databaseRef(database, DB_MESSAGES_KEY);
     // onChildAdded will return data for every child at the reference and every subsequent new child
     onChildAdded(messagesRef, (data) => {
       // add the subsequent child to local component state, initialising a new array to trigger re-render
@@ -126,8 +70,10 @@ export default function App(props) {
       const dataVal = data.val();
       setMessages((prevMessages) => [...prevMessages, {
         key: data.key,
-        val: dataVal.message,
+        message: dataVal.message,
         sentAt: dataVal.sentAt,
+        isHumanSender: dataVal.isHumanSender,
+        imageLink: dataVal.imageLink,
       }]);
     });
     return () => off(messagesRef);
@@ -140,25 +86,59 @@ export default function App(props) {
     }
   }, [messages]);
 
+  // RT database and storage upload
   const writeData = (e) => {
     // don't trigger page refresh
     e.preventDefault();
 
-    // do nothing if no input
-    if (input === "") return;
+    // do nothing if no text input
+    if (textInput === "") return;
 
-    // update firebase rtdb
-    const messagesRef = ref(database, DB_MESSAGES_KEY);
-    const newMessagesRef = push(messagesRef);
-    set(newMessagesRef, {
-      message: input,
-      sentAt: Date.now(),
-    });
+    setIsUploadingInput(true);
 
-    // clear input
-    setInput("");
+    // just upload text if no image
+    if (fileInputFile === null) {
+      // update firebase rtdb
+      const messagesRef = databaseRef(database, DB_MESSAGES_KEY);
+      const newMessagesRef = push(messagesRef);
+      set(newMessagesRef, {
+        message: textInput,
+        sentAt: Date.now(),
+        isHumanSender: true,
+        imageLink: "",
+      });
+
+      // clear text input
+      setTextInput("");
+      setIsUploadingInput(false);
+
+    // handle text and image
+    } else {
+      // upload image to firebase storage and update messages with url
+      const fileRef = storageRef(storage, `${IMAGES_FOLDER_NAME}/${fileInputFile.name}`);
+      uploadBytes(fileRef, fileInputFile)
+        .then(() => {
+          getDownloadURL(fileRef)
+            .then((downloadURL) => {
+              const messagesRef = databaseRef(database, DB_MESSAGES_KEY);
+              const newMessagesRef = push(messagesRef);
+              set(newMessagesRef, {
+                message: textInput,
+                sentAt: Date.now(),
+                isHumanSender: true,
+                imageLink: downloadURL,
+              })
+
+              // clear text and file input
+              setTextInput("");
+              setFileInputFile(null);
+              setIsUploadingInput(false);
+            })
+        })
+    }
   };
 
+  // automatic speech recognition handling
   const handleMicrophoneClick = (e) => {
     e.preventDefault();
 
@@ -168,14 +148,14 @@ export default function App(props) {
     setIsProcessingAudio(true);
 
     asr.key = process.env.REACT_APP_GOOGLE_KEY || null;
-    asr.maxTranscripts = MAX_ALTERNATIVES;
+    asr.maxTranscripts = MAX_ASR_TRANSCRIPTION_ALTERNATIVES;
 
     if (asr.key) {
       console.log("Using Google Cloud ASR.");
       asr.recognize()
         .then((response) => {
           const best_transcript = response[0].transcript;
-          setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
+          setTextInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
         })
         .catch(e => console.log(e))
         .finally(() => { setIsProcessingAudio(false) });
@@ -184,7 +164,7 @@ export default function App(props) {
       recognition.recognize()
         .then((response) => {
           const best_transcript = response[0].transcript;
-          setInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
+          setTextInput((prev) => prev === "" ? best_transcript : prev + "; " + best_transcript);
         })
         .catch(e => console.log(e))
         .finally(() => { setIsProcessingAudio(false) });
@@ -193,24 +173,22 @@ export default function App(props) {
 
   return (
     <div className="App">
-      <header className="App-header">
-        <h1>🚀gram</h1>
-      </header>
       <Paper elevation={0}>
+        <Typography variant="h1">
+          🍦gram
+        </Typography>
         <Paper
           variant="soft"
           sx={{
             borderRadius: "sm",
             boxShadow: 0,
-            height: 300,
+            height: "70vh",
+            minHeight: 300,
             minWidth: 300,
             overflow: "auto",
           }}
         >
-          <Table aria-label="chat-log" stickyHeader>
-            <TableHead>{messageHeader(tableColumns)}</TableHead>
-            <TableBody>{messageBody(messages, messageScrollRef)}</TableBody>
-          </Table>
+          <ChatFeed messages={messages} messageScrollRef={messageScrollRef} />
         </Paper>
         <Paper
           variant="soft"
@@ -218,7 +196,6 @@ export default function App(props) {
           sx={{
             borderRadius: "sm",
             boxShadow: 0,
-            height: 300,
             minWidth: 300,
             overflow: "auto",
           }}
@@ -230,10 +207,10 @@ export default function App(props) {
               required
               fullWidth
               variant="filled"
-              disabled={isProcessingAudio}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              label={isProcessingAudio ? "Processing audio..." : "Say or type something..."}
+              disabled={isProcessingAudio || isUploadingInput}
+              value={textInput}
+              onChange={(e) => setTextInput(e.target.value)}
+              label={isProcessingAudio ? "Processing audio..." : isUploadingInput ? "Uploading input..." : "Say or type something..."}
               InputProps={{
                 endAdornment: (
                   <>
@@ -244,10 +221,22 @@ export default function App(props) {
                     >
                       <MicIcon />
                     </IconButton>
+                    <IconButton onClick={() => fileInput.current.click()}>
+                      <PhotoCamera />
+                      <input
+                        styles={{ display: "none" }}
+                        type="file"
+                        accept="image/*"
+                        hidden
+                        ref={fileInput}
+                        onChange={(e) => setFileInputFile(e.target.files[0])}
+                        onClick={(e) => e.target.value = null}
+                      />
+                    </IconButton>
                     <Button
                       type="submit"
                       variant="contained"
-                      disabled={isProcessingAudio}
+                      disabled={textInput === "" || isProcessingAudio || isUploadingInput}
                       endIcon={isProcessingAudio ? <CancelScheduleSendIcon /> : <SendIcon />}
                     >
                       Send
@@ -258,6 +247,7 @@ export default function App(props) {
             />
           </form>
         </Paper>
+        <MemoizedImagePreview fileInputFile={fileInputFile} />
       </Paper>
     </div>
   )
