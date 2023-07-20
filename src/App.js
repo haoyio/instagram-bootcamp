@@ -20,9 +20,9 @@ import '@firebase/firestore'
 import { database, storage } from "./firebase";
 
 import {
+  Box,
   Button,
   IconButton,
-  Paper,
   TextField,
   Typography,
 } from '@mui/material'
@@ -36,6 +36,7 @@ import * as recognition from "./asr/speech-recognition";
 import GoogleAsr from './asr/google-asr';
 import ChatFeed from './Components/ChatFeed';
 import { MemoizedImagePreview } from './Components/ImagePreview';
+import InterviewTemplate from "./Components/UxrTemplateForm";
 
 
 const asr = new GoogleAsr();
@@ -173,12 +174,13 @@ export default function App() {
 
   return (
     <div className="App">
-      <Paper elevation={0}>
+      <Box>
         <Typography variant="h1">
           🍦gram
         </Typography>
-        <Paper
-          variant="soft"
+        <ChatFeed
+          messages={messages}
+          messageScrollRef={messageScrollRef}
           sx={{
             borderRadius: "sm",
             boxShadow: 0,
@@ -187,10 +189,8 @@ export default function App() {
             minWidth: 300,
             overflow: "auto",
           }}
-        >
-          <ChatFeed messages={messages} messageScrollRef={messageScrollRef} />
-        </Paper>
-        <Paper
+        />
+        <Box
           variant="soft"
           elevation={1}
           sx={{
@@ -248,9 +248,11 @@ export default function App() {
               }}
             />
           </form>
-        </Paper>
+        </Box>
         <MemoizedImagePreview fileInputFile={fileInputFile} />
-      </Paper>
+      </Box>
+      {/* Temporary interview template form until we place more nicely with router */}
+      <InterviewTemplate />
     </div>
   )
 }

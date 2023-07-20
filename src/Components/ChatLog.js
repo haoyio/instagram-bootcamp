@@ -1,4 +1,5 @@
 import {
+  Box,
   Table,
   TableBody,
   TableCell,
@@ -72,11 +73,13 @@ const messageBody = (messages, messageScrollRef) => (
   })
 )
 
-export default function ChatLog ({ messages, messageScrollRef }) {
+export default function ChatLog ({ messages, messageScrollRef, sx = {} }) {
   return (
-    <Table aria-label="chat-log" stickyHeader>
-      <TableHead>{messageHeader(tableColumns)}</TableHead>
-      <TableBody>{messageBody(messages, messageScrollRef)}</TableBody>
-    </Table>
+    <Box sx={sx}>
+      <Table aria-label="chat-log" stickyHeader>
+        <TableHead>{messageHeader(tableColumns)}</TableHead>
+        <TableBody>{messageBody(messages, messageScrollRef)}</TableBody>
+      </Table>
+    </Box>
   )
 }
