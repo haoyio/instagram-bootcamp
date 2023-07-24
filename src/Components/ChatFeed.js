@@ -1,3 +1,17 @@
+import React, {
+  useEffect,
+  useRef,
+  useState,
+} from "react";
+
+import {
+  onChildAdded,
+  ref as databaseRef,
+  off,
+} from "firebase/database";
+import '@firebase/firestore'
+import { database } from "../firebase";
+
 import {
   Avatar,
   Box,
@@ -12,7 +26,44 @@ import FaceIcon from '@mui/icons-material/Face';
 import PrecisionManufacturingIcon from '@mui/icons-material/PrecisionManufacturing';
 
 
-export default function ChatFeed ({ messages, messageScrollRef, sx = {} }) {
+// save the Firebase message folder name as a constant to avoid bugs due to misspelling
+const DB_MESSAGES_KEY = "messages";
+
+export default function ChatFeed ({ sx = {} }) {
+
+  // init empty messages array in state to keep local state in sync with Firebase
+  // when Firebase changes, update local state, which will update local UI
+  const [messages, setMessages] = useState([]);
+
+  // to ensure feed scrolls to the latest sent message
+  const messageScrollRef = useRef(null);
+
+  // update messages displayed when we see new ones
+  useEffect(() => {
+    const messagesRef = databaseRef(database, DB_MESSAGES_KEY);
+    // onChildAdded will return data for every child at the reference and every subsequent new child
+    onChildAdded(messagesRef, (data) => {
+      // add the subsequent child to local component state, initialising a new array to trigger re-render
+      // store message key so we can use it as a key in our list items when rendering messages
+      const dataVal = data.val();
+      setMessages((prevMessages) => [...prevMessages, {
+        key: data.key,
+        message: dataVal.message,
+        sentAt: dataVal.sentAt,
+        isHumanSender: dataVal.isHumanSender,
+        imageLink: dataVal.imageLink,
+      }]);
+    });
+    return () => off(messagesRef);
+  }, []);
+
+  // scroll the window to the latest message when received (not sent)
+  useEffect(() => {
+    if (messageScrollRef.current) {
+      messageScrollRef.current.scrollIntoView({ behavior: "auto" });
+    }
+  }, [messages]);
+
   return (
     <Box sx={sx}>
       {messages.map((message, i, messages) => {

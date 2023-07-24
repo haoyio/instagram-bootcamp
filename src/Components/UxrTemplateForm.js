@@ -21,7 +21,6 @@ const minDuration = 2;
 const maxDuration = 20;
 
 function BodySectionForm({ defaultTitle = "", defaultPriority = 0 }) {
-  // TODO: instantiate a SectionForm object
 
   const [title, setTitle] = useState(defaultTitle);
   const [priority, setPriority] = useState(defaultPriority);
@@ -141,15 +140,7 @@ function BodySectionForm({ defaultTitle = "", defaultPriority = 0 }) {
 }
 
 export default function UxrTemplateForm({ sx = {} }) {
-  // TODO: dynamically increment the number of body sections when a button is clicked
-  // IDEA: maintain an array of body sections as a state? create class for body sections internally.
-  //       can easily map elements to render from body section class instances
-
-  // TODO: remove body section if user clicks the delete button for that section
-  // IDEA: naive array element popping; don't bother with linked list when we only have a few sections...
-
-  // TODO: store template form in firebase RTDB when user clicks submit
-  // IDEA: ensure user gets a chance to review the form before actually submitting
+  // TODO: ensure user gets a chance to review the form before actually submitting
 
   const [interviewTitle, setInterviewTitle] = useState("");
 
