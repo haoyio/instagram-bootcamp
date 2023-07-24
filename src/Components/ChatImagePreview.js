@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardMedia } from '@mui/material';
 
-function ImagePreview({ fileInputFile }) {
+function ChatImagePreview({ fileInputFile }) {
   if (fileInputFile === null) return;
 
   return (
@@ -15,4 +15,4 @@ function ImagePreview({ fileInputFile }) {
   )
 }
 
-export const MemoizedImagePreview = React.memo(ImagePreview);
+export const MemoizedChatImagePreview = React.memo(ChatImagePreview);

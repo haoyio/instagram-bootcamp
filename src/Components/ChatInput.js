@@ -29,7 +29,7 @@ import { database, storage } from "../firebase";
 
 import * as recognition from "../asr/speech-recognition";
 import GoogleAsr from '../asr/google-asr';
-import { MemoizedImagePreview } from './ImagePreview';
+import { MemoizedChatImagePreview } from './ChatImagePreview';
 
 
 // save the Firebase message folder name as a constant to avoid bugs due to misspelling
@@ -194,7 +194,7 @@ export default function ChatInput() {
         />
       </form>
     </Box>
-    <MemoizedImagePreview fileInputFile={fileInputFile} />
+    <MemoizedChatImagePreview fileInputFile={fileInputFile} />
   </>
   ;
 }
