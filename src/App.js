@@ -7,7 +7,7 @@ import {
 
 import './App.css'
 import ChatFeed from './Components/ChatFeed';
-import InterviewTemplate from "./Components/UxrTemplateForm";
+import TemplateForm from "./Components/TemplateForm";
 import ChatInput from "./Components/ChatInput";
 
 
@@ -32,7 +32,7 @@ export default function App() {
         <ChatInput />
       </Box>
       {/* Temporary interview template form until we place more nicely with router */}
-      <InterviewTemplate />
+      <TemplateForm />
     </div>
   )
 }

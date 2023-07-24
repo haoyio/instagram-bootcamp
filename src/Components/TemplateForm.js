@@ -139,7 +139,7 @@ function BodySectionForm({ defaultTitle = "", defaultPriority = 0 }) {
   )
 }
 
-export default function UxrTemplateForm({ sx = {} }) {
+export default function TemplateForm({ sx = {} }) {
   // TODO: ensure user gets a chance to review the form before actually submitting
 
   const [interviewTitle, setInterviewTitle] = useState("");
