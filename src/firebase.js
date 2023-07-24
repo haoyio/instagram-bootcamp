@@ -1,4 +1,5 @@
 import { initializeApp } from "firebase/app";
+import { getAuth } from "firebase/auth";
 import { getDatabase } from "firebase/database";
 import { getStorage } from "firebase/storage";
 
@@ -17,3 +18,4 @@ const firebaseApp = initializeApp(firebaseConfig);
 // get a reference to the database service and export the reference for other modules
 export const database = getDatabase(firebaseApp);
 export const storage = getStorage(firebaseApp);
+export const auth = getAuth(firebaseApp);
